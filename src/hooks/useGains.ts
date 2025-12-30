@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export interface Gain {
   id: number;
@@ -8,41 +8,39 @@ export interface Gain {
 }
 
 export const CATEGORIES = [
-  { name: 'Salary (PAYE)', taxable: true },
-  { name: 'Freelance / Business', taxable: true },
-  { name: 'Gifts', taxable: false },
-  { name: 'Working Capital', taxable: false },
-  { name: 'Crypto / Digital Assets', taxable: true },
-  { name: 'Shares / Equities', taxable: false },
-  { name: 'Real Estate', taxable: true },
+  { name: 'Salary', taxable: true },
+  { name: 'Freelance', taxable: true },
+  { name: 'Gift/Personal', taxable: false },
+  { name: 'Dividends', taxable: true },
+  { name: 'Other', taxable: true }
 ];
 
-export const useGains = () => {
-  const [gains, setGains] = useState<Gain[]>([]);
+export function useGains() {
+  // Initialize from localStorage to persist data across refreshes
+  const [gains, setGains] = useState<Gain[]>(() => {
+    const saved = localStorage.getItem('gaintrak_data');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const calculations = useMemo(() => {
-    // Filter for categories marked as taxable
-    const taxableGainsTotal = gains
+  useEffect(() => {
+    localStorage.setItem('gaintrak_data', JSON.stringify(gains));
+  }, [gains]);
+
+  const totalGains = useMemo(() => 
+    gains.reduce((sum, g) => sum + g.amount, 0), [gains]
+  );
+
+  const estimatedTax = useMemo(() => {
+    const taxableIncome = gains
       .filter(g => CATEGORIES.find(c => c.name === g.tag)?.taxable)
       .reduce((sum, g) => sum + g.amount, 0);
 
-    const totalGains = gains.reduce((sum, g) => sum + g.amount, 0);
-
-    // Nigeria 2025 Progressive Tax Calculation
-    let tax = 0;
-    const TAX_FREE_THRESHOLD = 800000;
-
-    if (taxableGainsTotal > TAX_FREE_THRESHOLD) {
-      const taxableAmount = taxableGainsTotal - TAX_FREE_THRESHOLD;
-      if (taxableAmount <= 2200000) {
-        tax = taxableAmount * 0.15;
-      } else {
-        tax = (2200000 * 0.15) + ((taxableAmount - 2200000) * 0.25);
-      }
-    }
-
-    return { totalGains, taxableGainsTotal, estimatedTax: tax };
+    // Simple Nigeria-style progressive tax simulation
+    if (taxableIncome <= 300000) return taxableIncome * 0.07;
+    if (taxableIncome <= 600000) return 21000 + (taxableIncome - 300000) * 0.11;
+    if (taxableIncome <= 1100000) return 54000 + (taxableIncome - 600000) * 0.15;
+    return 129000 + (taxableIncome - 1100000) * 0.24;
   }, [gains]);
 
-  return { ...calculations, gains, setGains };
-};
+  return { gains, setGains, totalGains, estimatedTax };
+}

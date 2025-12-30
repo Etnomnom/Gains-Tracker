@@ -1,20 +1,27 @@
-import { ReactFlow, Background, Controls } from '@xyflow/react';
-import type { Edge, Node } from '@xyflow/react'; // Added 'type' here
+import { useCallback, useMemo } from 'react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  type Edge, 
+  type Node 
+} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useMemo } from 'react';
-import { CATEGORIES } from '../hooks/useGains';
-import type { Gain } from '../hooks/useGains'; // Added 'type' here
+import { type Gain, CATEGORIES } from '../hooks/useGains';
 
-export default function RevenueMindMap({ gains }: { gains: Gain[] }) {
+interface Props {
+  gains: Gain[];
+}
+
+export default function RevenueMindMap({ gains }: Props) {
   const { nodes, edges } = useMemo(() => {
     const initialNodes: Node[] = [
       {
         id: 'root',
-        type: 'input',
-        data: { label: '2025 Revenue Hub' },
+        data: { label: '2025 Revenue' },
         position: { x: 250, y: 0 },
-        style: { background: '#0f172a', color: '#fff', borderRadius: '12px', padding: '10px', fontWeight: 'bold' },
-      },
+        style: { background: '#0f172a', color: '#fff', borderRadius: '12px', fontWeight: 'bold' }
+      }
     ];
 
     const initialEdges: Edge[] = [];
@@ -24,27 +31,27 @@ export default function RevenueMindMap({ gains }: { gains: Gain[] }) {
       const total = catGains.reduce((sum, g) => sum + g.amount, 0);
 
       if (total > 0) {
-        const id = `node-${index}`;
+        const id = `node-${cat.name}`;
         initialNodes.push({
           id,
           data: { label: `${cat.name}\n₦${total.toLocaleString()}` },
-          position: { x: index * 200 - (CATEGORIES.length * 50), y: 150 },
+          position: { x: index * 200, y: 150 },
           style: { 
-            background: cat.taxable ? '#eff6ff' : '#f0fdf4', 
-            border: `2px solid ${cat.taxable ? '#3b82f6' : '#22c55e'}`,
-            borderRadius: '10px',
+            background: cat.taxable ? '#f8fafc' : '#f0fdf4',
+            border: cat.taxable ? '2px solid #e2e8f0' : '2px solid #22c55e',
+            borderRadius: '12px',
             fontSize: '12px',
-            textAlign: 'center',
-            width: 150
-          },
+            width: 150,
+            textAlign: 'center'
+          }
         });
 
         initialEdges.push({
-          id: `e-root-${id}`,
+          id: `edge-${cat.name}`,
           source: 'root',
           target: id,
-          animated: cat.taxable,
-          style: { stroke: cat.taxable ? '#3b82f6' : '#22c55e' }
+          animated: true,
+          style: { stroke: cat.taxable ? '#cbd5e1' : '#22c55e' }
         });
       }
     });
@@ -52,10 +59,19 @@ export default function RevenueMindMap({ gains }: { gains: Gain[] }) {
     return { nodes: initialNodes, edges: initialEdges };
   }, [gains]);
 
+  const onNodesChange = useCallback(() => {}, []);
+  const onEdgesChange = useCallback(() => {}, []);
+
   return (
-    <div className="h-[400px] w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <ReactFlow nodes={nodes} edges={edges} fitView>
-        <Background color="#f1f5f9" gap={20} />
+    <div style={{ width: '100%', height: '100%' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        fitView
+      >
+        <Background />
         <Controls />
       </ReactFlow>
     </div>
