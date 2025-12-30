@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // Added useEffect
+import { useState, useEffect } from 'react';
 import { useGains, CATEGORIES } from './hooks/useGains';
 import { 
   TrendingUp, Plus, Download, Wallet, Trash2, X, 
@@ -16,14 +16,12 @@ function App() {
   const [newTag, setNewTag] = useState(CATEGORIES[0].name);
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [monthFilter, setMonthFilter] = useState('All');
-  const [mounted, setMounted] = useState(false);
+  
+  // Guard to prevent 'useDebugValue' errors during deployment
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
 
-  // Prevent hydration errors on deployment
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
+  if (!isMounted) return null;
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,11 +50,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <nav className="sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 max-w-5xl mx-auto w-full">
-          <TrendingUp className="text-green-600" />
-          <span className="text-xl font-bold">GainTrack</span>
-          <div className="ml-auto flex gap-3">
+      <nav className="sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-4">
+        <div className="flex items-center justify-between max-w-5xl mx-auto w-full">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="text-green-600" />
+            <span className="text-xl font-bold">GainTrack</span>
+          </div>
+          <div className="flex gap-3">
             <button onClick={downloadPDF} className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
               <Download size={18} /> Export
             </button>
@@ -88,8 +88,8 @@ function App() {
               <h2 className="text-sm font-bold uppercase tracking-wider">History</h2>
             </div>
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1">
-              <Calendar size={14} className="text-slate-400" /> 
-              <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="text-sm font-bold outline-none bg-transparent cursor-pointer">
+              <Calendar size={14} className="text-slate-400" />
+              <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="text-sm font-bold outline-none bg-transparent">
                 <option value="All">All 2025</option>
                 {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => (
                   <option key={m} value={i}>{m} 2025</option>
@@ -100,7 +100,7 @@ function App() {
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
             {filteredGains.length === 0 ? (
-              <div className="p-10 text-center text-slate-400">No entries yet. Click "Add Entry" to start.</div>
+              <div className="p-10 text-center text-slate-400">No entries yet.</div>
             ) : (
               filteredGains.map(g => (
                 <div key={g.id} className="p-5 flex justify-between items-center hover:bg-slate-50">
@@ -108,9 +108,7 @@ function App() {
                     <div className="p-3 bg-slate-100 rounded-2xl text-slate-500"><Wallet size={20} /></div>
                     <div>
                       <p className="text-lg font-bold">₦{g.amount.toLocaleString()}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                        {g.tag} • {new Date(g.date).toLocaleDateString('en-NG')}
-                      </p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{g.tag} • {new Date(g.date).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <button onClick={() => setGains(gains.filter(i => i.id !== g.id))} className="text-slate-300 hover:text-red-500 transition-all">
@@ -131,20 +129,11 @@ function App() {
               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full"><X size={20} /></button>
             </div>
             <form onSubmit={handleAddSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase">Amount (₦)</label>
-                <input type="number" required value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl border-2 border-transparent focus:border-green-500 outline-none text-xl font-black" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase">Date</label>
-                <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase">Source</label>
-                <select value={newTag} onChange={(e) => setNewTag(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold">
-                  {CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-                </select>
-              </div>
+              <input type="number" required value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none text-xl font-black" placeholder="Amount (₦)" />
+              <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold text-slate-700" />
+              <select value={newTag} onChange={(e) => setNewTag(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold text-slate-700">
+                {CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+              </select>
               <button type="submit" className="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-xl hover:bg-green-700">Confirm Entry</button>
             </form>
           </div>
