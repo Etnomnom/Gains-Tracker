@@ -17,11 +17,17 @@ function App() {
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [monthFilter, setMonthFilter] = useState('All');
   
-  // Guard to prevent 'useDebugValue' errors during deployment
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
+  // FAIL-SAFE: This stops the blank screen crash on Vercel
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
-  if (!isMounted) return null;
+  if (!hasMounted) {
+    return <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="animate-pulse text-slate-400 font-bold">Loading GainTrack...</div>
+    </div>;
+  }
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +51,7 @@ function App() {
       CATEGORIES.find(c => c.name === g.tag)?.taxable ? 'Taxable' : 'Exempt'
     ]);
     autoTable(doc, { head: [['Date', 'Source', 'Amount', 'Tax Status']], body: tableData, startY: 30 });
-    doc.save(`GainTrack_Report.pdf`);
+    doc.save(`GainTrack_2025_Report.pdf`);
   };
 
   return (
@@ -73,8 +79,8 @@ function App() {
           <StatCard title="Est. Tax Liability" value={estimatedTax} subtitle="Progressive Calculation" isTax />
         </section>
 
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-slate-500">
+        <section className="h-[400px] bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-slate-100 flex items-center gap-2 text-slate-500">
             <PieChart size={18} />
             <h2 className="text-sm font-bold uppercase tracking-wider">Visual Flow</h2>
           </div>
@@ -89,7 +95,7 @@ function App() {
             </div>
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1">
               <Calendar size={14} className="text-slate-400" />
-              <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="text-sm font-bold outline-none bg-transparent">
+              <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="text-sm font-bold outline-none bg-transparent cursor-pointer">
                 <option value="All">All 2025</option>
                 {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => (
                   <option key={m} value={i}>{m} 2025</option>
@@ -100,10 +106,10 @@ function App() {
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
             {filteredGains.length === 0 ? (
-              <div className="p-10 text-center text-slate-400">No entries yet.</div>
+              <div className="p-10 text-center text-slate-400 font-medium">No records found. Click "Add Entry" to begin.</div>
             ) : (
               filteredGains.map(g => (
-                <div key={g.id} className="p-5 flex justify-between items-center hover:bg-slate-50">
+                <div key={g.id} className="p-5 flex justify-between items-center hover:bg-slate-50 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-slate-100 rounded-2xl text-slate-500"><Wallet size={20} /></div>
                     <div>
@@ -111,7 +117,7 @@ function App() {
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{g.tag} • {new Date(g.date).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <button onClick={() => setGains(gains.filter(i => i.id !== g.id))} className="text-slate-300 hover:text-red-500 transition-all">
+                  <button onClick={() => setGains(gains.filter(i => i.id !== g.id))} className="text-slate-300 hover:text-red-500 transition-all p-2">
                     <Trash2 size={20} />
                   </button>
                 </div>
@@ -124,17 +130,26 @@ function App() {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl p-8 space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center border-b pb-4">
               <h3 className="text-2xl font-bold">New Entry</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full"><X size={20} /></button>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-500"><X size={20} /></button>
             </div>
             <form onSubmit={handleAddSubmit} className="space-y-4">
-              <input type="number" required value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none text-xl font-black" placeholder="Amount (₦)" />
-              <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold text-slate-700" />
-              <select value={newTag} onChange={(e) => setNewTag(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold text-slate-700">
-                {CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
-              </select>
-              <button type="submit" className="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-xl hover:bg-green-700">Confirm Entry</button>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase">Amount (₦)</label>
+                <input type="number" required value={newAmount} onChange={(e) => setNewAmount(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none text-xl font-black focus:ring-2 focus:ring-green-500" placeholder="0" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase">Date</label>
+                <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold text-slate-700" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase">Source</label>
+                <select value={newTag} onChange={(e) => setNewTag(e.target.value)} className="w-full bg-slate-50 px-6 py-4 rounded-2xl outline-none font-bold text-slate-700">
+                  {CATEGORIES.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
+                </select>
+              </div>
+              <button type="submit" className="w-full py-5 bg-green-600 text-white rounded-2xl font-black text-xl hover:bg-green-700 transition-all shadow-lg shadow-green-100">Confirm Entry</button>
             </form>
           </div>
         </div>
