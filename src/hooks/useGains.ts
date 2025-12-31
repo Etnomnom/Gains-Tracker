@@ -1,46 +1,35 @@
-import { useState, useMemo, useEffect } from 'react';
-
-export interface Gain {
-  id: number;
-  amount: number;
-  tag: string;
-  date: Date;
-}
+import { useState, useMemo } from 'react';
 
 export const CATEGORIES = [
-  { name: 'Salary', taxable: true },
-  { name: 'Freelance', taxable: true },
-  { name: 'Gift/Personal', taxable: false },
-  { name: 'Dividends', taxable: true },
-  { name: 'Other', taxable: true }
+  { name: 'Salary', color: '#818cf8' },
+  { name: 'Freelance', color: '#34d399' },
+  { name: 'Dividends', color: '#fbbf24' },
+  { name: 'Other', color: '#94a3b8' }
 ];
 
 export function useGains() {
-  // Initialize from localStorage to persist data across refreshes
-  const [gains, setGains] = useState<Gain[]>(() => {
-    const saved = localStorage.getItem('gaintrak_data');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('gaintrak_data', JSON.stringify(gains));
-  }, [gains]);
+  const [gains, setGains] = useState<any[]>([]);
 
   const totalGains = useMemo(() => 
-    gains.reduce((sum, g) => sum + g.amount, 0), [gains]
-  );
+    gains.reduce((sum, item) => sum + item.amount, 0), 
+  [gains]);
 
   const estimatedTax = useMemo(() => {
-    const taxableIncome = gains
-      .filter(g => CATEGORIES.find(c => c.name === g.tag)?.taxable)
-      .reduce((sum, g) => sum + g.amount, 0);
+    let tax = 0;
+    const income = totalGains;
 
-    // Simple Nigeria-style progressive tax simulation
-    if (taxableIncome <= 300000) return taxableIncome * 0.07;
-    if (taxableIncome <= 600000) return 21000 + (taxableIncome - 300000) * 0.11;
-    if (taxableIncome <= 1100000) return 54000 + (taxableIncome - 600000) * 0.15;
-    return 129000 + (taxableIncome - 1100000) * 0.24;
-  }, [gains]);
+    // Progressive Brackets (Example: Nigerian Personal Income Tax style)
+    if (income <= 300000) {
+      tax = income * 0.07;
+    } else if (income <= 600000) {
+      tax = (300000 * 0.07) + ((income - 300000) * 0.11);
+    } else if (income <= 1100000) {
+      tax = (300000 * 0.07) + (300000 * 0.11) + ((income - 600000) * 0.15);
+    } else {
+      tax = (300000 * 0.07) + (300000 * 0.11) + (500000 * 0.15) + ((income - 1100000) * 0.24);
+    }
+    return Math.floor(tax);
+  }, [totalGains]);
 
-  return { gains, setGains, totalGains, estimatedTax };
+  return { totalGains, estimatedTax, gains, setGains };
 }

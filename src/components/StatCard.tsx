@@ -5,16 +5,16 @@ interface StatCardProps {
   isTax?: boolean;
 }
 
-const StatCard = ({ title, value, subtitle, isTax }: StatCardProps) => {
+const StatCard = ({ title, value, subtitle, isTax = false }: StatCardProps) => {
   return (
-    <div className={`p-6 rounded-2xl border ${isTax ? 'bg-green-600 border-green-500 text-white' : 'bg-white border-slate-200'}`}>
-      <p className={`text-sm font-medium ${isTax ? 'text-green-100' : 'text-slate-500'}`}>{title}</p>
-      <h2 className="text-4xl font-bold mt-2">
-        ₦{value.toLocaleString()}
-      </h2>
-      <p className={`text-xs mt-2 ${isTax ? 'text-green-200' : 'text-slate-400'}`}>
-        {subtitle}
+    <div className="bg-card backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-purple-500/30 transition-all duration-300 hover:transform hover:scale-[1.02] shadow-lg">
+      <p className="text-sm font-semibold text-white/60 uppercase tracking-wider mb-2">
+        {title}
       </p>
+      <p className={`text-4xl font-black mb-1 ${isTax ? 'text-red-400' : 'text-green-400'}`}>
+        ₦{value.toLocaleString()}
+      </p>
+      <p className="text-xs text-white/50">{subtitle}</p>
     </div>
   );
 };

@@ -1,66 +1,87 @@
-import { useCallback, useMemo } from 'react';
-import { 
-  ReactFlow, 
-  Background, 
-  Controls, 
-  type Edge, 
-  type Node 
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import { type Gain, CATEGORIES } from '../hooks/useGains';
+import { useEffect, useMemo } from 'react';
+import ReactFlow, { 
+  useNodesState, 
+  useEdgesState, 
+  ConnectionLineType,
+  MarkerType 
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 
-interface Props {
+interface Gain {
+  id: number;
+  amount: number;
+  tag: string;
+}
+
+interface RevenueMindMapProps {
   gains: Gain[];
 }
 
-export default function RevenueMindMap({ gains }: Props) {
-  const { nodes, edges } = useMemo(() => {
-    const initialNodes: Node[] = [
-      {
-        id: 'root',
-        data: { label: '2025 Revenue' },
-        position: { x: 250, y: 0 },
-        style: { background: '#0f172a', color: '#fff', borderRadius: '12px', fontWeight: 'bold' }
-      }
-    ];
+const RevenueMindMap = ({ gains }: RevenueMindMapProps) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    const initialEdges: Edge[] = [];
+  const initialElements = useMemo(() => {
+    // Group gains by tag
+    const totalsByTag = gains.reduce((acc: Record<string, number>, curr) => {
+      acc[curr.tag] = (acc[curr.tag] || 0) + curr.amount;
+      return acc;
+    }, {});
 
-    CATEGORIES.forEach((cat, index) => {
-      const catGains = gains.filter(g => g.tag === cat.name);
-      const total = catGains.reduce((sum, g) => sum + g.amount, 0);
+    const centerNode = {
+      id: 'root',
+      type: 'input',
+      data: { label: 'TOTAL REVENUE' },
+      position: { x: 250, y: 0 },
+      style: { 
+        background: 'rgba(138, 127, 168, 0.2)', 
+        color: '#fff', 
+        border: '2px solid #8A7FA8',
+        borderRadius: '12px',
+        fontWeight: 'bold',
+        fontSize: '12px',
+        width: 150,
+        backdropFilter: 'blur(10px)',
+        boxShadow: '0 0 20px rgba(138, 127, 168, 0.3)'
+      },
+    };
 
-      if (total > 0) {
-        const id = `node-${cat.name}`;
-        initialNodes.push({
-          id,
-          data: { label: `${cat.name}\n₦${total.toLocaleString()}` },
-          position: { x: index * 200, y: 150 },
-          style: { 
-            background: cat.taxable ? '#f8fafc' : '#f0fdf4',
-            border: cat.taxable ? '2px solid #e2e8f0' : '2px solid #22c55e',
-            borderRadius: '12px',
-            fontSize: '12px',
-            width: 150,
-            textAlign: 'center'
-          }
-        });
+    const tagNodes = Object.entries(totalsByTag).map(([tag, total], index) => ({
+      id: tag,
+      data: { label: `${tag}\n₦${total.toLocaleString()}` },
+      position: { x: index * 200, y: 150 },
+      style: { 
+        background: 'rgba(255, 255, 255, 0.05)', 
+        color: 'rgba(255, 255, 255, 0.8)', 
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '12px',
+        fontSize: '10px',
+        padding: '10px',
+        width: 140,
+        textAlign: 'center' as const,
+        backdropFilter: 'blur(5px)'
+      },
+    }));
 
-        initialEdges.push({
-          id: `edge-${cat.name}`,
-          source: 'root',
-          target: id,
-          animated: true,
-          style: { stroke: cat.taxable ? '#cbd5e1' : '#22c55e' }
-        });
-      }
-    });
+    const newEdges = Object.keys(totalsByTag).map((tag) => ({
+      id: `e-root-${tag}`,
+      source: 'root',
+      target: tag,
+      animated: true,
+      style: { stroke: '#8A7FA8', strokeWidth: 2, opacity: 0.4 },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: '#8A7FA8',
+      },
+    }));
 
-    return { nodes: initialNodes, edges: initialEdges };
+    return { nodes: [centerNode, ...tagNodes], edges: newEdges };
   }, [gains]);
 
-  const onNodesChange = useCallback(() => {}, []);
-  const onEdgesChange = useCallback(() => {}, []);
+  useEffect(() => {
+    setNodes(initialElements.nodes);
+    setEdges(initialElements.edges);
+  }, [initialElements, setNodes, setEdges]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -69,11 +90,13 @@ export default function RevenueMindMap({ gains }: Props) {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        connectionLineType={ConnectionLineType.SmoothStep}
         fitView
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
+        // Hiding the attribution for a cleaner UI
+        proOptions={{ hideAttribution: true }}
+      />
     </div>
   );
-}
+};
+
+export default RevenueMindMap;
