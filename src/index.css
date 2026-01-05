@@ -5,56 +5,100 @@
 :root {
   --bg-purple: #302C3E;
   --accent-purple: #8A7FA8;
-  --glass-bg: rgba(48, 44, 62, 0.6);
+  --glass-bg: rgba(48, 44, 62, 0.4);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: linear-gradient(135deg, #000000 0%, var(--bg-purple) 100%);
-  color: white;
   min-height: 100vh;
-  font-family: 'Inter', sans-serif;
+  position: relative;
   overflow-x: hidden;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-body::after {
-  content: "";
+/* Base gradient background */
+body::before {
+  content: '';
   position: fixed;
   top: 0;
   left: 0;
-  width: 200%;
-  height: 200%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cpath d='M0 100 Q 250 50 500 100 T 1000 100' fill='none' stroke='%238A7FA8' stroke-width='2' opacity='0.1'/%3E%3C/svg%3E");
-  animation: moveWaves 20s linear infinite;
-  z-index: -1;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #000000 0%, #1a1625 50%, var(--bg-purple) 100%);
+  z-index: -2;
+}
+
+/* Animated wavy lines background */
+body::after {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: -10%;
+  width: 120%;
+  height: 140%;
+  background-image: url("data:image/svg+xml,%3Csvg width='1400' height='900' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,200 Q200,100 400,200 T800,200 T1200,200 T1600,200' stroke='%238A7FA8' stroke-width='3' fill='none' opacity='0.15'/%3E%3Cpath d='M0,300 Q200,200 400,300 T800,300 T1200,300 T1600,300' stroke='%238A7FA8' stroke-width='2.5' fill='none' opacity='0.12'/%3E%3Cpath d='M0,400 Q200,300 400,400 T800,400 T1200,400 T1600,400' stroke='%238A7FA8' stroke-width='2' fill='none' opacity='0.1'/%3E%3Cpath d='M0,500 Q200,400 400,500 T800,500 T1200,500 T1600,500' stroke='%238A7FA8' stroke-width='2' fill='none' opacity='0.08'/%3E%3C/svg%3E");
+  background-repeat: repeat;
   pointer-events: none;
+  z-index: -1;
+  animation: wave 25s ease-in-out infinite;
 }
 
-@keyframes moveWaves {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-50%, -10%); }
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(30px) translateX(20px);
+  }
 }
 
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
+/* Glassmorphism card effect */
+.glass-card,
+.bg-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  transition: all 0.3s ease;
-  input:focus, select:focus {
-  box-shadow: 0 0 15px rgba(138, 127, 168, 0.4);
-  border-color: #8A7FA8 !important;
 }
 
-/* Custom Scrollbar for the History List */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 10px;
 }
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.2);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(138, 127, 168, 0.2);
-  border-radius: 10px;
+  background: rgba(138, 127, 168, 0.4);
+  border-radius: 5px;
 }
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 127, 168, 0.6);
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(139, 92, 246, 0.4);
+  color: white;
+}
+
+/* Placeholder styling */
+::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Backdrop blur support fallback */
+@supports not (backdrop-filter: blur(20px)) {
+  .glass-card,
+  .bg-card {
+    background: rgba(48, 44, 62, 0.9) !important;
+  }
 }
